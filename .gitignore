@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+*.so
+.DS_Store
+.idea/
+.vscode/
+
+# Local data, outputs, and large model files are intentionally excluded.
+data/raw/
+data/private/
+outputs/
+logs/
+checkpoints/
+predictions/
+*.pth
+*.pt
+*.ckpt
+*.nii
+*.nii.gz
+*.npy
+*.npz

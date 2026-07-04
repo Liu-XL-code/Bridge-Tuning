@@ -1,0 +1,88 @@
+trainer_name: CrossValidation_trainer
+experiment_mode: kshot_tcga
+current_center: TARGET_A
+target_centers:
+  - TARGET_A
+
+# Set use_tcga=false for A->C and A->B->C comparisons from fixed weights.
+# Set use_tcga=true with the foundation weight for the pooled A->(B union C) baseline.
+use_tcga: false
+tcga_center_name: BRIDGE
+
+peft_methods:
+  - name: lora
+    model_name: SwinUNETRLoRA
+  - name: bitfit
+    model_name: SwinUNETRBitFit
+  - name: linear_prob
+    model_name: SwinUNETRLinear_Prob
+
+weight_paths:
+  foundation: weights/foundation_swinunetr.pth
+  bridge: weights/bridge_tcga_esca_swinunetr.pth
+
+cross_validation:
+  TARGET_A: 4
+
+center_configs:
+  TARGET_A:
+    csv_path: data/example_csv/samples.csv
+    data_path: /path/to/target_center
+    num_classes: 2
+  BRIDGE:
+    csv_path: data/example_csv/samples.csv
+    data_path: /path/to/bridge_dataset
+    num_classes: 2
+
+device: cuda
+gpu: 0
+in_channels: 1
+feature_size: 48
+roi_x: 96
+roi_y: 96
+roi_z: 96
+space_x: 1.5
+space_y: 1.5
+space_z: 2.0
+a_min: -175.0
+a_max: 250.0
+b_min: 0.0
+b_max: 1.0
+num_samples: 2
+RandFlipd_prob: 0.3
+RandRotate90d_prob: 0.3
+RandScaleIntensityd_prob: 0.2
+RandShiftIntensityd_prob: 0.2
+k_shot:
+  - 5
+  - 10
+random_seeds:
+  - 0
+  - 1
+  - 2
+seed: 42
+epochs: 300
+batch_size: 4
+lr: 0.0005
+finetune_warmup_epochs: 20
+finetune_save_freq: 200
+finetune_print_freq: 20
+optimizer: AdamW
+momentum: 0.9
+weight_decay: 0.00001
+distributed: false
+multiprocessing_distributed: false
+world_size: 1
+rank: 0
+dist_url: tcp://127.0.0.1:23456
+dist_backend: nccl
+ngpus_per_node: 1
+workers: 4
+output_dir: outputs/stage2_bridge_tuning
+resume:
+start_epoch: 0
+early_stop_enabled: true
+early_stop_patience: 30
+early_stop_threshold: 0.01
+sw_batch_size: 4
+infer_overlap: 0.5
