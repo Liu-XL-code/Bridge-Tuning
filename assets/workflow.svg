@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="710" viewBox="0 0 1280 710" role="img" aria-labelledby="title desc">
+<title id="title">Bridge-Tuning training and inference workflow</title>
+<desc id="desc">Frozen unlabeled image features assess candidate bridges with directional support distance and distribution coverage. A pretrained foundation model is fine tuned on a bridge, then adapted with K labeled target volumes using LoRA. Held out testing occurs after checkpoint selection, and sliding window inference restores a native space mask.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10" fill="#3f5366"/></marker></defs>
+<rect width="1280" height="710" fill="#f6f8fc"/>
+<g font-family="Arial, sans-serif" fill="#162b43">
+<text x="40" y="55" font-size="30" font-weight="700">Bridge-Tuning</text><text x="40" y="88" font-size="18">Separate bridge assessment, supervised adaptation and held-out evaluation</text>
+<rect x="40" y="130" width="300" height="128" rx="14" fill="#e3ecf9" stroke="#adc3df"/>
+<text x="60" y="162" font-size="20" font-weight="700">Unlabeled images B and C</text><text x="60" y="193" font-size="16">Frozen Swin stage-3 features</text><text x="60" y="219" font-size="16">No segmentation labels are read</text><text x="60" y="242" font-size="15">All target images: transductive</text>
+<rect x="400" y="130" width="440" height="128" rx="14" fill="#e4f2ed" stroke="#91bcad"/>
+<text x="420" y="163" font-size="20" font-weight="700">Bridge criteria before target adaptation</text><text x="420" y="195" font-size="17">D(C to B): mean nearest-support distance</text><text x="420" y="223" font-size="17">Delta W: trace cov(B) minus trace cov(C)</text><text x="420" y="247" font-size="15">Choose smallest D or largest Delta W</text>
+<rect x="900" y="130" width="340" height="128" rx="14" fill="#fff1dc" stroke="#dec295"/>
+<text x="920" y="163" font-size="20" font-weight="700">Registered subject partitions</text><text x="920" y="195" font-size="16">Fixed held-out fold across seeds</text><text x="920" y="223" font-size="16">K support subjects from other folds</text><text x="920" y="247" font-size="15">Training does not receive test labels</text>
+<text x="40" y="327" font-size="22" font-weight="700">Supervised segmentation path</text>
+<rect x="40" y="360" width="225" height="160" rx="14" fill="#e3ecf9" stroke="#adc3df"/>
+<text x="60" y="396" font-size="21" font-weight="700">Foundation A</text><text x="60" y="432" font-size="17">Pretrained Swin UNETR</text><text x="60" y="461" font-size="16">One-channel 3D input</text><text x="60" y="490" font-size="16">Binary head initialized</text>
+<rect x="345" y="360" width="235" height="160" rx="14" fill="#e4f2ed" stroke="#91bcad"/>
+<text x="365" y="396" font-size="21" font-weight="700">Bridge stage B</text><text x="365" y="432" font-size="17">Full-parameter training</text><text x="365" y="461" font-size="16">Bridge training volumes</text><text x="365" y="490" font-size="16">Explicit checkpoint rule</text>
+<rect x="660" y="360" width="250" height="160" rx="14" fill="#f0e9f8" stroke="#bfa7d7"/>
+<text x="680" y="396" font-size="21" font-weight="700">Target stage C</text><text x="680" y="432" font-size="17">K labeled target volumes</text><text x="680" y="461" font-size="16">Encoder LoRA, rank 8</text><text x="680" y="490" font-size="16">Full decoder and head</text>
+<rect x="990" y="360" width="250" height="160" rx="14" fill="#fff1dc" stroke="#dec295"/>
+<text x="1010" y="396" font-size="21" font-weight="700">Test and inference</text><text x="1010" y="432" font-size="17">Fixed selected checkpoint</text><text x="1010" y="461" font-size="16">96-cubed sliding windows</text><text x="1010" y="490" font-size="16">Native-grid binary mask</text>
+<rect x="40" y="570" width="1200" height="102" rx="12" fill="white" stroke="#d0d9e4"/>
+<text x="60" y="602" font-size="18" font-weight="700">Shared deterministic preprocessing</text><text x="60" y="631" font-size="17">RAS orientation → image/mask spacing → CT HU or MRI percentile normalization → image-foreground crop</text><text x="60" y="657" font-size="15">Training adds positive/negative ROI sampling and augmentation. Test metrics use the preprocessed grid; masks are inverted for native-space output.</text>
+</g>
+<g fill="none" stroke="#3f5366" stroke-width="2.5" marker-end="url(#arrow)"><path d="M340 195 H388"/><path d="M620 258 V300 H463 V346"/><path d="M1070 258 V310 H785 V346"/><path d="M265 440 H331"/><path d="M580 440 H646"/><path d="M910 440 H976"/></g>
+</svg>
