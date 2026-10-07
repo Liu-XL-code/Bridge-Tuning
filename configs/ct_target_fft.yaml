@@ -1,4 +1,0 @@
-model:
-  strategy: fft
-preprocessing:
-  modality: ct

@@ -1,5 +1,0 @@
-model:
-  strategy: bitfit
-  freeze_encoder_convolutions: true
-preprocessing:
-  modality: ct

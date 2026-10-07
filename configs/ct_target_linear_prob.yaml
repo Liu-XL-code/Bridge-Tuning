@@ -1,6 +1,0 @@
-# Historical label: Linear Prob. Encoder frozen, decoder + output head trainable.
-model:
-  strategy: linear_prob
-  freeze_encoder_convolutions: true
-preprocessing:
-  modality: ct
