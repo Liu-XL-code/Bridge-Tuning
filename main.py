@@ -12,8 +12,6 @@ import sys
 import matplotlib
 matplotlib.use('Agg')
 
-sys.path.append('lib/')
-
 from lib.utils import set_seed, dist_setup, get_conf
 import lib.trainers as trainers
 

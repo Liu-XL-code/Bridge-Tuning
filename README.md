@@ -37,13 +37,15 @@ Bridge-Tuning decouples task-prior learning from target-domain adaptation:
 
 ```text
 Bridge-Tuning/
-|-- code/
-|   |-- main.py
-|   `-- lib/
-|       |-- data/                 # CSV-based MONAI datasets and transforms
-|       |-- models/               # Swin UNETR, LoRA, BitFit, linear probing
-|       |-- tools/                # metrics, logging, checkpoints, result tables
-|       `-- trainers/             # bridge/target training and cross-validation
+|-- main.py                       # Training entry point
+|-- lib/
+|   |-- bridge_models/            # Bridge model wrappers and data loaders
+|   |-- data/                     # CSV-based MONAI datasets and transforms
+|   |-- models/                   # Swin UNETR, LoRA, BitFit, linear probing
+|   |-- modules/
+|   |-- tools/                    # Metrics, logging, checkpoints, result tables
+|   |-- trainers/                 # Bridge/target training and cross-validation
+|   `-- utils.py
 |-- configs/
 |   |-- stage1_bridge_pretrain.yaml
 |   `-- stage2_bridge_tuning.yaml
@@ -53,10 +55,11 @@ Bridge-Tuning/
 |   `-- unified_eval.py
 |-- data/example_csv/
 |   `-- samples.csv
-|-- results/
-|   `-- paper_tables.md
-`-- weights/
-    `-- README.md
+|-- weights/
+|   `-- README.md
+|-- requirements.txt
+|-- .gitignore
+`-- README.md
 ```
 
 ## Environment
@@ -101,13 +104,13 @@ The Swin UNETR architecture is from MONAI. The foundation checkpoint should be d
 Stage 1 creates the bridge checkpoint:
 
 ```bash
-python code/main.py configs/stage1_bridge_pretrain.yaml
+python main.py configs/stage1_bridge_pretrain.yaml
 ```
 
 Stage 2 runs few-shot target adaptation from both the foundation checkpoint and the bridge checkpoint:
 
 ```bash
-python code/main.py configs/stage2_bridge_tuning.yaml
+python main.py configs/stage2_bridge_tuning.yaml
 ```
 
 Important fields in `configs/stage2_bridge_tuning.yaml`:

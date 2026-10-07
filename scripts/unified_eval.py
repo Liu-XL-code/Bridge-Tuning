@@ -6,6 +6,7 @@ an extra hd95_mm uses physical spacing). Predictions are expected in ORIGINAL im
 Appends per-case rows and a per-(target,seed) summary line.
 """
 import os, json, argparse, importlib.util, csv
+from pathlib import Path
 import numpy as np
 import torch
 from monai import transforms as T
@@ -32,7 +33,8 @@ def main():
     ap.add_argument("--dsid", required=True)
     ap.add_argument("--pred_dir", required=True)
     ap.add_argument("--method", required=True)
-    ap.add_argument("--code_dir", required=True)
+    ap.add_argument("--code_dir", default=str(Path(__file__).resolve().parents[1]),
+                    help="Repository root containing lib/ (defaults to this checkout)")
     ap.add_argument("--out_percase", required=True)
     ap.add_argument("--out_summary", required=True)
     args = ap.parse_args()

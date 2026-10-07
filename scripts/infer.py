@@ -12,8 +12,7 @@ from monai import transforms as T
 from monai.inferers import sliding_window_inference
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "code"))
-sys.path.insert(0, str(ROOT / "code" / "lib"))
+sys.path.insert(0, str(ROOT))
 
 import lib.models as models  # noqa: E402
 
