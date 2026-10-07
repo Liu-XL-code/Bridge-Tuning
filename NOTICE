@@ -1,0 +1,12 @@
+Bridge-Tuning source release
+
+MIT applies to this organized source and documentation. No datasets, image/label
+examples, result files, model weights or third-party comparator implementations are
+distributed. Locally acquired data and weights retain their providers' conditions.
+
+Swin UNETR is supplied by MONAI (Apache-2.0), without vendoring its implementation:
+https://github.com/Project-MONAI/MONAI
+
+Foundation initialization is attributed by the study to the FSEFT work:
+https://github.com/jusiro/fewshot-finetuning
+Obtain a compatible initializer separately under the provider's conditions.

@@ -1,158 +1,158 @@
-# Bridge-Tuning for Few-Shot Medical Image Segmentation
+# Bridge-Tuning
 
-This anonymous repository contains the core implementation of **Bridge-Tuning**, a two-stage fine-tuning strategy for few-shot medical image segmentation.
+**Decoupling Task Priors and Domain Shift: Bridge-Tuning for Few-Shot Medical Image Segmentation**
 
-The released code focuses on the method itself:
-
-- Swin UNETR backbone wrappers.
-- PEFT variants used in the paper: full fine-tuning, linear probing, BitFit, and LoRA.
-- Bridge-Tuning training path: foundation model `A` -> bridge model `B` -> target model `C`.
-- Bridge-domain selection criteria: Sample Support Distance and Distribution Coverage Gap.
-- Minimal inference and visualization scripts.
-- Paper result tables for quick reference.
-
-Private clinical data, private data indices, patient-level predictions, and large model weights are not included.
-
-## Method Flow
+Minimal source release for the esophageal tumor CT Bridge-Tuning pipeline:
+foundation initialization **A**, full-parameter bridge pre-adaptation **A→B**, and
+few-shot target LoRA adaptation **B→C**, followed by validation, testing and inference.
+Only the private CT experiment profiles are included. The repository contains **no
+datasets, example images/labels, CSV indices, experiment-result files or model weights**.
+It contains no external comparison methods or comparison experiment drivers.
 
 ```mermaid
 flowchart LR
-    A["A: foundation Swin UNETR"] -->|"Stage 1: full fine-tune on bridge data"| B["B: bridge-adapted checkpoint"]
-    B -->|"Stage 2: PEFT on K-shot target data"| C["C: target-center model"]
-    A -->|"Direct baseline: PEFT on K-shot target data"| D["A -> C"]
-    A -->|"Pooled baseline: bridge + K-shot target"| E["A -> (B union C)"]
-    F["Frozen encoder features"] --> G["Sample Support Distance"]
-    F --> H["Distribution Coverage Gap"]
-    G --> I["Bridge-domain ranking"]
-    H --> I
+    A["A: locally supplied foundation backbone"] --> B["B: bridge full fine-tuning"]
+    B --> C["C: K-shot target LoRA adaptation"]
+    C --> E["Validation / held-out test / native-grid inference"]
+    A --> F["Frozen image features from B and C"]
+    F --> S["Bridge assessment: D and Delta W"]
 ```
 
-Bridge-Tuning decouples task-prior learning from target-domain adaptation:
+## Installation
 
-1. **Stage 1, A -> B:** fine-tune the foundation model on an annotated bridge dataset to obtain a task-adapted initialization.
-2. **Stage 2, B -> C:** adapt the bridge checkpoint to a few labeled target volumes using PEFT.
-3. **Bridge selection:** before target adaptation, rank candidate bridge domains with frozen feature-space criteria.
-
-## Code Tree
-
-```text
-Bridge-Tuning/
-|-- code/
-|   |-- main.py
-|   `-- lib/
-|       |-- data/                 # CSV-based MONAI datasets and transforms
-|       |-- models/               # Swin UNETR, LoRA, BitFit, linear probing
-|       |-- tools/                # metrics, logging, checkpoints, result tables
-|       `-- trainers/             # bridge/target training and cross-validation
-|-- configs/
-|   |-- stage1_bridge_pretrain.yaml
-|   `-- stage2_bridge_tuning.yaml
-|-- scripts/
-|   |-- infer.py
-|   |-- bridge_selection.py
-|   `-- unified_eval.py
-|-- data/example_csv/
-|   `-- samples.csv
-|-- results/
-|   `-- paper_tables.md
-`-- weights/
-    `-- README.md
-```
-
-## Environment
+Use Python 3.10 or 3.11. Install the appropriate PyTorch build for your GPU, then:
 
 ```bash
-conda create -n bridge-tuning python=3.10 -y
-conda activate bridge-tuning
-pip install -r requirements.txt
+python -m pip install -r requirements.txt
+python -m pip install -e . --no-deps
 ```
 
-The code expects 3D CT/MRI volumes in NIfTI format and uses MONAI preprocessing.
+The implementation uses MONAI 1.4.0. Full training uses feature_size=48 and a 96³
+patch; a CUDA GPU is recommended. Dependency versions used in earlier verification
+are listed in `requirements-verified.txt`.
 
-## Data CSV Format
+## Prepare local inputs
 
-Each CSV must contain at least two columns:
+Acquire your own authorized CT images, masks and foundation checkpoint. The target
+cohorts are PUCH, HMUCC, FAZZU, HNCH and HNCH-Late; TCGA-ESCA is the bridge cohort.
+All paths below are **local placeholders**, not files in this repository.
+Create CSV manifests with columns `id,subject_id,image,label`. Image and mask paths
+are relative to their CSV, or absolute. Keep every scan from the same subject under
+one `subject_id`, and keep training, validation and testing subjects disjoint.
 
-```csv
-image,label
-images/case_001.nii.gz,labels/case_001.nii.gz
-images/case_002.nii.gz,labels/case_002.nii.gz
-```
+See [dataset preparation](docs/DATASETS.md) and [preprocessing](docs/PREPROCESSING.md).
+Preprocessing is performed by the loader; do not apply it twice offline.
 
-Relative paths are resolved from the `data_path` configured for each center. Absolute paths are also accepted. See `data/example_csv/samples.csv`.
+## A: foundation initialization
 
-Private center data are not released. For paper experiments, each target split samples `K=5` or `K=10` labeled target volumes for adaptation, and evaluates on the remaining target volumes. Runs are repeated over three sampling seeds.
-
-## Model Weights
-
-Place model files under `weights/`:
-
-```text
-weights/
-|-- foundation_swinunetr.pth
-|-- bridge_tcga_esca_swinunetr.pth
-`-- target_lora_checkpoint.pth
-```
-
-The Swin UNETR architecture is from MONAI. The foundation checkpoint should be downloaded from the corresponding released foundation-model source used by the paper. Large weights are intentionally not committed.
-
-## Training
-
-Stage 1 creates the bridge checkpoint:
+Supply the compatible original Swin UNETR initializer locally. Convert a trusted
+legacy checkpoint to this source release's format:
 
 ```bash
-python code/main.py configs/stage1_bridge_pretrain.yaml
+python convert_checkpoint.py --input weights/foundation_swinunetr.pth \
+  --config configs/a_foundation.yaml --role foundation --backbone-only --trusted \
+  --output runs/foundation.pt
 ```
 
-Stage 2 runs few-shot target adaptation from both the foundation checkpoint and the bridge checkpoint:
+`--trusted` permits loading a legacy file you trust. There is no automatic download.
+The converted backbone is an initializer; it requires the following training stages
+before tumor segmentation inference. A pretraining itself is not part of this release.
+
+## A→B: bridge pre-adaptation
 
 ```bash
-python code/main.py configs/stage2_bridge_tuning.yaml
+python train.py --config configs/b_bridge.yaml \
+  --train-csv data/TCGA-ESCA/train.csv --val-csv data/TCGA-ESCA/val.csv \
+  --init runs/foundation.pt --role bridge --output runs/bridge --device auto
 ```
 
-Important fields in `configs/stage2_bridge_tuning.yaml`:
+The bridge updates all parameters. The default selects the final checkpoint.
+To select the best bridge validation Dice instead, explicitly set
+`training.selection: val_dice` and supply a disjoint validation manifest.
 
-- `weight_paths.foundation`: checkpoint for direct `A -> C`.
-- `weight_paths.bridge`: checkpoint for `A -> B -> C`.
-- `peft_methods`: choose `SwinUNETRLoRA`, `SwinUNETRBitFit`, `SwinUNETRLinear_Prob`, or `SwinUNETRModel`.
-- `k_shot`: few-shot budgets, for example `[5, 10]`.
-- `random_seeds`: sampling seeds.
+## B→C: few-shot target adaptation and testing
+
+Example for PUCH; repeat with the corresponding local manifest for each target center:
+
+```bash
+python make_splits.py --csv data/PUCH/all.csv --folds 5 --shots 5 \
+  --seeds 0 1 2 --split-seed 1024 --output runs/PUCH/splits
+
+python train.py --config configs/c_target.yaml \
+  --train-csv runs/PUCH/splits/fold_0_seed_0_train.csv \
+  --init runs/bridge/selected.pt --role target --seed 0 \
+  --output runs/PUCH/fold_0_seed_0 --device auto
+
+python evaluate.py --checkpoint runs/PUCH/fold_0_seed_0/selected.pt \
+  --csv runs/PUCH/splits/fold_0_test.csv --partition test \
+  --output runs/PUCH/fold_0_seed_0/test --device auto
+```
+
+Repeat the last two commands for folds 0–4 and support seeds 0–2. Test folds are
+fixed across support seeds. Only K labeled training volumes are used per run; there
+is no separate target validation set in this few-shot protocol. Use a fresh training
+output directory for every fold/seed. [Training rules](docs/TRAINING.md) specify the
+optimizer, stopping criterion, checkpoint selection and evaluation units.
+
+For an independently supplied validation set, evaluate the already selected checkpoint:
+
+```bash
+python evaluate.py --checkpoint runs/PUCH/fold_0_seed_0/selected.pt \
+  --csv data/PUCH/validation.csv --partition validation \
+  --output runs/PUCH/validation --device auto
+```
+
+This optional evaluation does not change checkpoint selection or create a validation
+set for the no-validation few-shot protocol.
 
 ## Inference
 
-Run single-volume inference with a trained checkpoint:
-
 ```bash
-python scripts/infer.py \
-  --image /path/to/image.nii.gz \
-  --checkpoint weights/target_lora_checkpoint.pth \
-  --model lora \
-  --output-dir outputs/infer_case001
+python infer.py --checkpoint runs/PUCH/fold_0_seed_0/selected.pt \
+  --image data/PUCH/images/local_case.nii.gz \
+  --output runs/prediction.nii.gz --device auto
+python visualize.py --image data/PUCH/images/local_case.nii.gz \
+  --prediction runs/prediction.nii.gz --output runs/overlay.png
 ```
 
-The script writes:
+Inference restores the binary mask to the input image's native shape and affine.
+All generated masks, figures, logs and checkpoints remain local and are ignored by Git.
 
-- `prediction_preprocessed.npy`: predicted mask in the preprocessed space.
-- `prediction_preprocessed.nii.gz`: NIfTI mask if `nibabel` is installed.
-- `overlay.png`: center or lesion-slice visualization.
-
-## Bridge Selection Criteria
-
-Given frozen encoder feature files saved as `.npz` with key `features`, rank candidate bridges:
+## Label-free bridge assessment
 
 ```bash
-python scripts/bridge_selection.py \
-  --target-features features/target_center.npz \
-  --bridge-features bridge_a=features/bridge_a.npz bridge_b=features/bridge_b.npz \
-  --out results/bridge_selection.csv
+python extract_features.py --checkpoint runs/foundation.pt \
+  --config configs/a_foundation.yaml --csv data/TCGA-ESCA/all.csv \
+  --output runs/features_B.npy --device auto
+python extract_features.py --checkpoint runs/foundation.pt \
+  --config configs/a_foundation.yaml --csv data/PUCH/all.csv \
+  --output runs/features_C.npy --device auto
+python select_bridge.py --target runs/features_C.npy \
+  --bridge TCGA-ESCA=runs/features_B.npy --output runs/bridge_assessment.json
 ```
 
-The script reports:
+Feature extraction reads images only. `D(C→B)` is the target-to-bridge mean nearest
+feature distance; `ΔW = W(B)−W(C)`, where W is the trace of sample feature covariance.
+Using unlabeled test images for center characterization is a **transductive** setting;
+supervised target adaptation remains restricted to K annotated volumes.
 
-- `sample_support_distance`: smaller is better.
-- `distribution_coverage_gap`: larger is better.
-- `rank_score`: a simple normalized ranking score combining both criteria.
+## Code and checks
 
-## Notes For Anonymous Review
+```text
+configs/             # A initializer, B bridge, C target: CT only
+src/bridge_tuning/   # Model, preprocessing, training, metrics, splits and criteria
+docs/                # Dataset setup, preprocessing and training details
+tests/               # Fixtures generated temporarily when tests run
+train.py / evaluate.py / infer.py
+make_splits.py / extract_features.py / select_bridge.py
+convert_checkpoint.py / audit_geometry.py / visualize.py
+```
 
-This repository is a partial anonymous release. It is intended to let reviewers inspect the core algorithm and run inference when a compatible checkpoint is provided. Full training data, private split files, and full model zoo will be released after acceptance if permitted by data governance rules.
+```bash
+python -m unittest discover -s tests -v
+python verify_files.py
+```
+
+No data or weights are required to inspect the source. Real training and inference
+require the locally supplied inputs described above. See [verification](docs/VERIFICATION.md)
+for the scope of the checks; this release is not a claim of newly reproduced paper results.

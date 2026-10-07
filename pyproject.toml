@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bridge-tuning-segmentation"
+version = "0.1.0"
+description = "Anonymous Bridge-Tuning code for 3D medical image segmentation"
+requires-python = ">=3.10"
+dependencies = ["torch>=2.4,<3", "monai==1.4.0", "numpy>=1.24,<2", "scipy>=1.10,<2", "nibabel>=5.2,<6", "PyYAML>=6,<7", "einops>=0.7,<1", "matplotlib>=3.8,<4"]
+
+[project.scripts]
+bt-train = "bridge_tuning.cli:train_main"
+bt-evaluate = "bridge_tuning.cli:evaluate_main"
+bt-infer = "bridge_tuning.cli:infer_main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

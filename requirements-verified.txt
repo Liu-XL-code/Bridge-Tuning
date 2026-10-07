@@ -1,0 +1,10 @@
+# Exact versions in the CUDA software verification environment.
+# Select the torch CUDA wheel appropriate to your GPU using the PyTorch installer.
+torch==2.11.0
+monai==1.4.0
+numpy==1.26.4
+scipy==1.15.3
+nibabel==5.4.2
+PyYAML==6.0.3
+einops==0.8.2
+matplotlib==3.10.9
