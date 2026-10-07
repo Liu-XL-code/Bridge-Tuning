@@ -1,0 +1,29 @@
+# Private CT Bridge-Tuning: stage A. Paths are supplied locally via CLI.
+model:
+  feature_size: 48
+  in_channels: 1
+  out_channels: 2
+  strategy: fft
+  use_checkpoint: true
+  lora_rank: 8
+  lora_alpha: 16
+  lora_dropout: 0.1
+  lora_targets: ["qkv"]
+  freeze_encoder_convolutions: true
+preprocessing:
+  modality: ct
+  orientation: RAS
+  spacing: [1.5, 1.5, 2.0]
+  roi: [96, 96, 96]
+  hu_window: [-175, 250]
+  label_mode: positive
+  flip_probability: 0.3
+  rotate_probability: 0.3
+  intensity_probability: 0.2
+  patches_per_volume: 2
+  geometry_tolerance_mm: 0.001
+evaluation:
+  overlap: 0.5
+  sw_batch_size: 1
+  hd95_unit: voxel
+  empty_mask_hd95: 100
