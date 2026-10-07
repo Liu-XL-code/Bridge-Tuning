@@ -1,6 +1,0 @@
-id,subject_id,image,label
-synthetic_03,synthetic_03,images/synthetic_03.nii.gz,labels/synthetic_03.nii.gz
-synthetic_04,synthetic_04,images/synthetic_04.nii.gz,labels/synthetic_04.nii.gz
-synthetic_05,synthetic_05,images/synthetic_05.nii.gz,labels/synthetic_05.nii.gz
-synthetic_06,synthetic_06,images/synthetic_06.nii.gz,labels/synthetic_06.nii.gz
-synthetic_07,synthetic_07,images/synthetic_07.nii.gz,labels/synthetic_07.nii.gz
