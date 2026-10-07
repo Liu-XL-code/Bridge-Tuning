@@ -1,0 +1,15 @@
+# Same model family, reduced width/ROI and two epochs solely for software verification.
+model:
+  feature_size: 12
+  strategy: lora
+preprocessing:
+  roi: [64, 64, 64]
+  patches_per_volume: 1
+training:
+  epochs: 2
+  batch_volumes: 1
+  learning_rate: 0.0005
+  warmup_epochs: 0
+  early_stop: false
+  validation_interval: 1
+  selection: final

@@ -1,0 +1,18 @@
+model:
+  strategy: lora
+  lora_rank: 8
+  lora_alpha: 16
+  lora_dropout: 0.1
+  lora_targets: [qkv]
+  freeze_encoder_convolutions: true
+preprocessing:
+  modality: ct
+training:
+  epochs: 300
+  batch_volumes: 4
+  learning_rate: 0.0005
+  weight_decay: 0.00001
+  warmup_epochs: 20
+  early_stop: true
+  early_stop_patience: 30
+  selection: final

@@ -1,0 +1,16 @@
+# Small Swin UNETR for an end-to-end software check, not a paper experiment.
+model:
+  feature_size: 12
+  strategy: fft
+preprocessing:
+  roi: [64, 64, 64]
+  patches_per_volume: 2
+training:
+  epochs: 2
+  batch_volumes: 2
+  learning_rate: 0.0001
+  weight_decay: 0.01
+  warmup_epochs: 0
+  early_stop: false
+  validation_interval: 1
+  selection: val_dice
