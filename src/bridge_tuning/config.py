@@ -42,8 +42,8 @@ def merge(base, override):
 
 def validate(cfg):
     m, p, t, e = (cfg[k] for k in ("model", "preprocessing", "training", "evaluation"))
-    if m["strategy"] not in {"fft", "lora", "bitfit", "linear_prob"}:
-        raise ValueError("strategy must be fft, lora, bitfit or linear_prob")
+    if m["strategy"] not in {"fft", "lora"}:
+        raise ValueError("strategy must be fft (bridge) or lora (target)")
     if m["in_channels"] != 1 or m["out_channels"] != 2:
         raise ValueError("This release implements one-channel, binary 3D segmentation")
     if m["feature_size"] <= 0 or m["feature_size"] % 12:

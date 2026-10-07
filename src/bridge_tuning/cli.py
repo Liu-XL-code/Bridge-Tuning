@@ -70,7 +70,7 @@ def evaluate_main():
 
 
 def infer_main():
-    parser = argparse.ArgumentParser(description="Infer a native-space binary mask from a 3D CT/MRI volume")
+    parser = argparse.ArgumentParser(description="Infer a native-space binary mask from a 3D CT volume")
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--image", required=True)
     parser.add_argument("--output", required=True, help="Output NIfTI path (.nii.gz)")

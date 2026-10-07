@@ -1,4 +1,4 @@
-"""Swin UNETR and the original encoder PEFT / full-decoder strategies."""
+"""Swin UNETR and bridge full fine-tuning and target LoRA."""
 import inspect
 from pathlib import Path
 
@@ -44,10 +44,6 @@ def apply_strategy(model, cfg):
         encoder = is_encoder(name, freeze_convs)
         if mode == "fft":
             trainable = True
-        elif mode == "linear_prob":
-            trainable = not encoder
-        elif mode == "bitfit":
-            trainable = not encoder or "bias" in name or "norm" in name.lower() or ".bn" in name
         else:
             trainable = not encoder or ".lora_a." in name or ".lora_b." in name
         parameter.requires_grad_(trainable)
