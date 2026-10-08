@@ -3,8 +3,6 @@ import warnings
 
 import torch
 import torch.multiprocessing as mp
-# torch.multiprocessing.set_sharing_strategy('file_system')
-#import wandb
 import multiprocessing
 import sys
 
@@ -18,10 +16,9 @@ import lib.trainers as trainers
 from setproctitle import setproctitle
 setproctitle('main')
 
-# 第23行之前添加：
 # 默认配置文件
 if len(sys.argv) == 1:
-    sys.argv = ['', 'configs/cross_validation.yaml']
+    sys.argv = ['', 'configs/stage2_bridge_tuning.yaml']
 
 # 提取备注（配置文件之后的所有参数）
 remarks = sys.argv[2:] if len(sys.argv) > 2 else []
@@ -35,14 +32,14 @@ def main():
 
     args = get_conf()
 
-    # 添加备注信息
+    # Record optional run remarks.
     args.run_remarks = '_'.join(saved_remarks) if saved_remarks else None
     if args.run_remarks:
         print(f"Run remarks: {args.run_remarks}")
 
     args.test = False
 
-    # set seed if required（兼容新旧配置：优先args.seed，否则使用experiment.seed）
+    # Prefer the top-level seed, then fall back to experiment.seed.
     seed = getattr(args, 'seed', None)
     if seed is None and hasattr(args, 'experiment') and args.experiment:
         seed = args.experiment.get('seed')
@@ -89,12 +86,9 @@ def main_worker(gpu, args):
     if args.resume:
         trainer.resume()
     #因为是多个中心的微调所以不在此处构建数据加载器
-    #trainer.build_dataloader()
 
     trainer.run()
 
-    # if args.rank == 0 and not args.disable_wandb:
-    #     run.finish()
 
 
 if __name__ == '__main__':

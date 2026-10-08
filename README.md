@@ -1,6 +1,6 @@
 # Bridge-Tuning for Few-Shot Medical Image Segmentation
 
-This anonymous repository contains the core implementation of **Bridge-Tuning**, a two-stage fine-tuning strategy for few-shot medical image segmentation.
+This repository contains the core implementation of **Bridge-Tuning**, a two-stage fine-tuning strategy for few-shot medical image segmentation.
 
 The released code focuses on the method itself:
 
@@ -9,7 +9,6 @@ The released code focuses on the method itself:
 - Bridge-Tuning training path: foundation model `A` -> bridge model `B` -> target model `C`.
 - Bridge-domain selection criteria: Sample Support Distance and Distribution Coverage Gap.
 - Minimal inference and visualization scripts.
-- Paper result tables for quick reference.
 
 Private clinical data, private data indices, patient-level predictions, and large model weights are not included.
 
@@ -42,7 +41,6 @@ Bridge-Tuning/
 |   |-- bridge_models/            # Bridge model wrappers and data loaders
 |   |-- data/                     # CSV-based MONAI datasets and transforms
 |   |-- models/                   # Swin UNETR, LoRA, BitFit, linear probing
-|   |-- modules/
 |   |-- tools/                    # Metrics, logging, checkpoints, result tables
 |   |-- trainers/                 # Bridge/target training and cross-validation
 |   `-- utils.py
@@ -84,7 +82,7 @@ images/case_002.nii.gz,labels/case_002.nii.gz
 
 Relative paths are resolved from the `data_path` configured for each center. Absolute paths are also accepted. See `data/example_csv/samples.csv`.
 
-Private center data are not released. For paper experiments, each target split samples `K=5` or `K=10` labeled target volumes for adaptation, and evaluates on the remaining target volumes. Runs are repeated over three sampling seeds.
+Private center data are not released. In cross-validation, one fold is held out for testing, and `K=5` or `K=10` labeled target volumes are sampled from the remaining folds for adaptation. The number of folds follows the experiment configuration. Runs are repeated over three sampling seeds.
 
 ## Model Weights
 
@@ -121,6 +119,8 @@ Important fields in `configs/stage2_bridge_tuning.yaml`:
 - `k_shot`: few-shot budgets, for example `[5, 10]`.
 - `random_seeds`: sampling seeds.
 
+The LoRA implementation adapts encoder attention layers and fully fine-tunes the decoder. Keep `decoder_lora=False`; decoder LoRA (`decoder_lora=True`) is not supported.
+
 ## Inference
 
 Run single-volume inference with a trained checkpoint:
@@ -156,6 +156,6 @@ The script reports:
 - `distribution_coverage_gap`: larger is better.
 - `rank_score`: a simple normalized ranking score combining both criteria.
 
-## Notes For Anonymous Review
+## Release Scope
 
-This repository is a partial anonymous release. It is intended to let reviewers inspect the core algorithm and run inference when a compatible checkpoint is provided. Full training data, private split files, and full model zoo will be released after acceptance if permitted by data governance rules.
+This release provides the Bridge-Tuning training, evaluation, and inference code. Supply your own compatible checkpoint and local data paths before running the commands above. Private clinical images, patient-level split files, predictions, and model weights are not distributed in this repository.

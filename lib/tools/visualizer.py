@@ -65,7 +65,7 @@ class Visualizer:
 
     def save_prediction_samples(self, images, labels, predictions, epoch, num_samples=4):
         """保存3D医学图像预测样本的可视化（已禁用）"""
-        # 根据需求，不再保存样本可视化
+        # Sample visualization is disabled in this training callback.
         pass
 
     def save_3d_volume(self, volume, filename, affine=None):
@@ -76,8 +76,7 @@ class Visualizer:
         if torch.is_tensor(volume):
             volume = volume.cpu().numpy()
 
-        # ✅ 修复：转换数据类型，避免int64类型导致的错误
-        # 对于分割标签，使用uint8；对于浮点数据，使用float32
+        # Use uint8 for integer segmentation labels and float32 for floating-point volumes.
         if volume.dtype in [np.int64, np.int32]:
             volume = volume.astype(np.uint8)
         elif volume.dtype == np.float64:
@@ -89,7 +88,7 @@ class Visualizer:
         if affine is None:
             affine = np.eye(4)
 
-        # ✅ 修复：Nifti1Image不接受dtype参数，应该先转换数据再创建图像
+        # Create the NIfTI image after converting the volume to a supported storage dtype.
         nii_img = nib.Nifti1Image(volume, affine)
         nib.save(nii_img, self.vis_dir / filename)
 

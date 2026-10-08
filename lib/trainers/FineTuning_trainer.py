@@ -87,7 +87,7 @@ class FineTuning_trainer(BaseTrainer):
 
         self.logger.info(f"Selected {len(selected_samples)} samples from {len(all_samples)} for training")
 
-        # ✅ 直接传入样本列表，不需要创建临时CSV！
+        # Pass the sampled training records directly to the data loader.
         self.train_loader = get_dataloader(
             data_path=dataset_config['data_path'],
             list_file=None,

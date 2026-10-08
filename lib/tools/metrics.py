@@ -152,12 +152,6 @@ class MetricsCalculator:
         return np.mean(all_hd95_scores) if all_hd95_scores else 0.0
 
     @staticmethod
-    def surface_dice(pred, target, tolerance=2.0):
-        """表面Dice系数"""
-        # 简化实现
-        return MetricsCalculator.dice_score(pred, target)
-
-    @staticmethod
     def volume_metrics(pred, target, num_classes=None, voxel_spacing=(1.0, 1.0, 1.0)):
         """计算3D体积相关指标"""
         # 处理预测结果

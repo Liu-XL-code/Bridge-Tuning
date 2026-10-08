@@ -594,17 +594,17 @@ class CrossValidation_trainer(BaseTrainer):
 
         关键：确保模型状态正确重置，无梯度累积
         """
-        # ✅ 步骤1：重置模型到预训练状态
+        # Restore the pretrained model state before each run.
         self._reset_model_to_pretrained()
 
-        # ✅ 步骤2：清除所有梯度
+        # Clear gradients from the previous run.
         self.optimizer.zero_grad()
         for param in self.model.parameters():
             if param.grad is not None:
                 param.grad.detach_()
                 param.grad.zero_()
 
-        # ✅ 步骤3：设置训练种子
+        # Set the global training seed.
         set_seed(self.global_train_seed)
 
         # 步骤4：设置logger
@@ -652,10 +652,8 @@ class CrossValidation_trainer(BaseTrainer):
                         threshold = self.early_stop_threshold * loss_smooth[-self.early_stop_patience]
                         improvement = loss_smooth[-self.early_stop_patience] - loss_smooth[-1]
 
-                        # 🔧 修复早停逻辑：与FineTuning_trainer保持一致
-                        # improvement < threshold 表示：
-                        # 1. 损失在下降但下降幅度很小（0 < improvement < threshold）→ 早停
-                        # 2. 损失在增加（improvement < 0）→ 也应该早停，避免继续恶化
+                        # Stop when smoothed loss improvement is below the relative threshold.
+                        # This includes small loss decreases and loss increases.
                         if improvement < threshold:
                             if self.logger:
                                 self.logger.info(f"Training loss plateau detected")
@@ -743,7 +741,7 @@ class CrossValidation_trainer(BaseTrainer):
         # 重新加载预训练权重
         self._load_pretrained_weights(self.current_weight_path)
 
-        # 🔧 检查模型设备一致性和结构变化，如果LoRA模型内部重置了，需要重新包装
+        # Rewrap the model if devices differ or reloading changes the LoRA structure.
         if hasattr(self, 'wrapped_model') and self.model is not None:
             try:
                 model_device = next(self.model.parameters()).device

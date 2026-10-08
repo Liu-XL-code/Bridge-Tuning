@@ -1,4 +1,3 @@
-# trainers/trainer_center_step1.py
 """
 单中心30-6-6划分训练器（第一步实验）
 

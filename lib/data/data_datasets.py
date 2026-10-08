@@ -113,7 +113,7 @@ def get_dataloader(data_path, list_file, sample_list, batch_size, num_workers,
     dataset = MedicalSegmentationDataset(
         data_path=data_path,
         list_file=list_file,
-        sample_list=sample_list,  # 新增参数
+        sample_list=sample_list,
         preload_transform=get_preload_transforms(args, is_train=is_train),
         augmentation_transform=get_augmentation_transforms(args) if is_train else None,
         context=context

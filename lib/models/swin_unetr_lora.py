@@ -1,36 +1,8 @@
-"""
-SwinUNETR with LoRA (Low-Rank Adaptation)
-支持对编码器和解码器分别控制是否使用LoRA参数高效微调
+"""SwinUNETR with LoRA adapters on encoder attention projections.
 
-使用方式：
-1. 通过配置文件（推荐）：
-   在 configs/finetuning_only.yaml 中设置：
-   model_name: SwinUNETRLoRA
-   peft_config:
-     r: 64
-     alpha: 16
-     dropout: 0.1
-     target_modules: ['qkv', 'proj']
-     freeze_encoder: False  # False=使用LoRA, True=完全微调
-     freeze_decoder: False  # False=使用LoRA, True=完全微调
-
-   训练器会自动传递 peft_config，无需修改训练器代码
-
-2. 直接初始化：
-   model = SwinUNETRLoRA(
-       in_channels=1,
-       out_channels=2,
-       feature_size=48,
-       encoder_lora=True,   # 编码器使用LoRA
-       decoder_lora=False,  # 解码器完全微调
-       lora_r=64,
-       lora_alpha=16
-   )
-
-参数说明：
-- freeze_encoder=False: 编码器使用LoRA（参数高效）
-- freeze_encoder=True:  编码器完全微调（所有参数可训练）
-- freeze_decoder同理
+Foundation weights are loaded before inserting the adapters. The decoder is
+fully fine-tuned with decoder_lora=False; decoder LoRA is not implemented.
+See configs/stage2_bridge_tuning.yaml for the target-adaptation entry point.
 """
 
 import torch
@@ -52,7 +24,7 @@ class LoRALayer(nn.Module):
         # 计算缩放因子
         self.scaling = alpha / rank
 
-        # 🔧 获取原始层的设备，确保新创建的层在同一设备上
+        # Create adapter layers on the original layer's device.
         device = next(original_layer.parameters()).device
 
         # 低秩矩阵 A 和 B
@@ -62,7 +34,7 @@ class LoRALayer(nn.Module):
         self.lora_a = nn.Linear(in_features, rank, bias=False)
         self.lora_b = nn.Linear(rank, out_features, bias=False)
 
-        # 🔧 将新创建的层移动到与原始层相同的设备
+        # Keep the adapter and original projection on the same device.
         self.lora_a = self.lora_a.to(device)
         self.lora_b = self.lora_b.to(device)
 
@@ -91,7 +63,7 @@ class SwinUNETRLoRA(nn.Module):
 
     参数说明：
     - encoder_lora: True时编码器使用LoRA，False时编码器完全微调
-    - decoder_lora: True时解码器使用LoRA，False时解码器完全微调
+    - decoder_lora: 必须为False，解码器完全微调；True尚未实现
 
     支持两种初始化方式：
     1. 直接传参: SwinUNETRLoRA(encoder_lora=True, lora_r=64, ...)
@@ -143,6 +115,12 @@ class SwinUNETRLoRA(nn.Module):
             lora_dropout = 0.1
         if target_modules is None:
             target_modules = ['qkv']
+
+        if decoder_lora:
+            raise NotImplementedError(
+                "Decoder LoRA is not implemented. Set decoder_lora=False "
+                "to fine-tune the decoder."
+            )
 
         # 保存模型配置（用于重置模型）
         self._model_config = {
@@ -265,27 +243,11 @@ class SwinUNETRLoRA(nn.Module):
         return lora_count
 
     def _apply_lora_to_decoder(self):
-        """对解码器应用LoRA（可选功能）"""
-        # 解码器通常使用卷积层，LoRA主要用于线性层
-        # 这里提供一个基础实现，可以根据需要扩展
-        lora_count = 0
-
-        # 遍历解码器的所有模块
-        for name, module in self.model.named_modules():
-            # 只处理解码器部分
-            if not name.startswith('decoder'):
-                continue
-
-            # 如果是 Linear 层且名称匹配 target_modules
-            if isinstance(module, nn.Linear):
-                # 可以在这里添加 LoRA
-                # 但通常解码器不需要 LoRA
-                pass
-
-        if lora_count > 0:
-            print(f"  解码器: 已应用 {lora_count} 个 LoRA 层")
-        else:
-            print(f"  解码器: 未应用 LoRA (解码器主要是卷积层)")
+        """Reject unsupported decoder adapters instead of silently doing nothing."""
+        raise NotImplementedError(
+            "Decoder LoRA is not implemented. Set decoder_lora=False "
+            "to fine-tune the decoder."
+        )
 
     def _unfreeze_encoder(self):
         """解冻编码器所有参数（完全微调）"""
@@ -351,7 +313,7 @@ class SwinUNETRLoRA(nn.Module):
             if self._lora_applied:
                 print("检测到模型已有LoRA结构，正在重置为标准SwinUNETR...")
 
-                # 🔧 保存当前设备信息，确保新模型在相同设备上
+                # Preserve the device when rebuilding the backbone.
                 try:
                     device = next(self.model.parameters()).device
                 except StopIteration:
@@ -360,7 +322,7 @@ class SwinUNETRLoRA(nn.Module):
 
                 self.model = SwinUNETR(**self._model_config)
 
-                # 🔧 将新模型移动到相同设备
+                # Move the rebuilt backbone to the previous device.
                 self.model = self.model.to(device)
 
                 self._lora_applied = False
@@ -429,7 +391,7 @@ def create_swin_unetr_lora(
     Args:
         peft_config: 字典，包含 LoRA 配置
             - freeze_encoder: False表示编码器使用LoRA，True表示完全微调
-            - freeze_decoder: False表示解码器使用LoRA，True表示完全微调
+            - freeze_decoder: 必须为True以完全微调解码器；False请求尚未实现的解码器LoRA
             - r: LoRA rank
             - alpha: LoRA alpha
             - dropout: LoRA dropout
